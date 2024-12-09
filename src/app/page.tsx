@@ -21,7 +21,7 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const { isDarkMode, toggleTheme, resetToSystem, currentTheme } = useDarkMode();
 
   useEffect(() => {
     setIsClient(true);
@@ -82,7 +82,7 @@ export default function Home() {
       }
 
       setMessages(prev => [...prev, {
-        id: `assistant-${Date.now()}`,  // 고유한 id 생성
+        id: `assistant-${Date.now()}`,  // 고유한 id ��성
         role: 'assistant',
         content: data.content,
       }]);
@@ -117,19 +117,36 @@ export default function Home() {
   };
 
   return (
-    <div className={`${isDarkMode ? 'dark' : ''}`}>
+    <div className={isDarkMode ? 'dark' : ''}>
       <main className="flex min-h-screen flex-col items-center p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
         {/* 헤더 */}
         <div className="w-full max-w-3xl flex justify-between items-center mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
           <h1 className="text-2xl font-bold">AI Chat</h1>
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-              title={isDarkMode ? '라이트 모드' : '다크 모드'}
-            >
-              {isDarkMode ? '🌙' : '☀️'}
-            </button>
+            <div className="relative group">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                title={`현재: ${
+                  currentTheme === 'system' 
+                    ? '시스템 설정' 
+                    : currentTheme === 'dark' 
+                    ? '다크 모드' 
+                    : '라이트 모드'
+                }`}
+              >
+                {isDarkMode ? '🌙' : '☀️'}
+              </button>
+              {currentTheme !== 'system' && (
+                <button
+                  onClick={resetToSystem}
+                  className="absolute top-full mt-1 left-0 p-2 bg-white dark:bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="시스템 설정으로 복구"
+                >
+                  🖥️
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setSystemPromptModalOpen(true)}
               className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -157,24 +174,21 @@ export default function Home() {
         {/* 메시지 목록 */}
         <div className="w-full max-w-3xl flex-1 overflow-y-auto">
           <div className="space-y-4 pb-24">
-            {messages.map((message) => {
-              const messageKey = message.id || `msg-${Date.now()}-${Math.random()}`;
-              return (
-                <ChatMessage
-                  key={messageKey}
-                  message={message}
-                  onEdit={handleEditMessage}
-                  onDelete={handleDeleteMessage}
-                />
-              );
-            })}
-            {isLoading && <LoadingAnimation key="loading" />}
+            {messages.map((message, index) => (
+              <ChatMessage
+                key={message.id || `message-${index}-${Date.now()}`}
+                message={message}
+                onEdit={handleEditMessage}
+                onDelete={handleDeleteMessage}
+              />
+            ))}
+            {isLoading && <LoadingAnimation key="loading-animation" />}
             {error && (
-              <div key="error" className="text-red-500 p-4 text-center bg-red-100 dark:bg-red-900 rounded-lg">
+              <div key="error-message" className="text-red-500 p-4 text-center bg-red-100 dark:bg-red-900 rounded-lg">
                 {error}
               </div>
             )}
-            <div ref={messagesEndRef} />
+            <div key="messages-end-ref" ref={messagesEndRef} />
           </div>
         </div>
         
