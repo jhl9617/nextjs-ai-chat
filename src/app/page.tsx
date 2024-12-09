@@ -157,17 +157,20 @@ export default function Home() {
         {/* 메시지 목록 */}
         <div className="w-full max-w-3xl flex-1 overflow-y-auto">
           <div className="space-y-4 pb-24">
-            {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                onEdit={handleEditMessage}
-                onDelete={handleDeleteMessage}
-              />
-            ))}
-            {isLoading && <LoadingAnimation />}
+            {messages.map((message) => {
+              const messageKey = message.id || `msg-${Date.now()}-${Math.random()}`;
+              return (
+                <ChatMessage
+                  key={messageKey}
+                  message={message}
+                  onEdit={handleEditMessage}
+                  onDelete={handleDeleteMessage}
+                />
+              );
+            })}
+            {isLoading && <LoadingAnimation key="loading" />}
             {error && (
-              <div className="text-red-500 p-4 text-center bg-red-100 dark:bg-red-900 rounded-lg">
+              <div key="error" className="text-red-500 p-4 text-center bg-red-100 dark:bg-red-900 rounded-lg">
                 {error}
               </div>
             )}
