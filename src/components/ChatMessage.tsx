@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import MarkdownRenderer from './MarkdownRenderer';
-import { Message } from '@/types/chat';
-import { copyToClipboard } from '@/utils/chat';
+import { useState } from "react";
+import MarkdownRenderer from "./MarkdownRenderer";
+import { Message } from "@/types/chat";
+import { copyToClipboard } from "@/utils/chat";
 
 interface ChatMessageProps {
   message: Message;
@@ -9,7 +9,11 @@ interface ChatMessageProps {
   onDelete?: (id: string) => void;
 }
 
-export default function ChatMessage({ message, onEdit, onDelete }: ChatMessageProps) {
+export default function ChatMessage({
+  message,
+  onEdit,
+  onDelete,
+}: ChatMessageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -30,12 +34,18 @@ export default function ChatMessage({ message, onEdit, onDelete }: ChatMessagePr
   };
 
   return (
-    <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 group`}>
-      <div className={`max-w-[80%] rounded-lg p-4 relative ${
-        message.role === 'user' 
-          ? 'bg-blue-500 text-white' 
-          : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white'
-      }`}>
+    <div
+      className={`flex ${
+        message.role === "user" ? "justify-end" : "justify-start"
+      } mb-4 group`}
+    >
+      <div
+        className={`max-w-[80%] rounded-lg p-4 relative ${
+          message.role === "user"
+            ? "bg-blue-500 text-white"
+            : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white"
+        }`}
+      >
         {isEditing ? (
           <textarea
             value={editContent}
@@ -45,21 +55,21 @@ export default function ChatMessage({ message, onEdit, onDelete }: ChatMessagePr
         ) : (
           <MarkdownRenderer content={message.content} />
         )}
-        
+
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={handleCopy}
             className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-            title={copySuccess ? '복사됨!' : '복사하기'}
+            title={copySuccess ? "복사됨!" : "복사하기"}
           >
-            {copySuccess ? '✓' : '📋'}
+            {copySuccess ? "✓" : "📋"}
           </button>
           {onEdit && (
             <button
               onClick={handleEdit}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded ml-1"
             >
-              {isEditing ? '💾' : '✏️'}
+              {isEditing ? "💾" : "✏️"}
             </button>
           )}
           {onDelete && (

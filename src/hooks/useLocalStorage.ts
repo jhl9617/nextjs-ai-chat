@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Message } from '@/types/chat';
+import { useState, useEffect } from "react";
 
-export function useLocalStorage(key: string, initialValue: Message[]) {
+export function useLocalStorage<T>(key: string, initialValue: T) {
   // 초기 상태 설정
-  const [storedValue, setStoredValue] = useState<Message[]>(() => {
+  const [storedValue, setStoredValue] = useState<T>(() => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const item = window.localStorage.getItem(key);
         return item ? JSON.parse(item) : initialValue;
       }
@@ -19,7 +18,7 @@ export function useLocalStorage(key: string, initialValue: Message[]) {
   // 값이 변경될 때마다 로컬 스토리지 업데이트
   useEffect(() => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         window.localStorage.setItem(key, JSON.stringify(storedValue));
       }
     } catch (error) {

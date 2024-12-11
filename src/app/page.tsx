@@ -1,27 +1,35 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Message } from '@/types/chat';
-import ChatMessage from '@/components/ChatMessage';
-import ChatInput from '@/components/ChatInput';
-import LoadingAnimation from '@/components/LoadingAnimation';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useState, useRef, useEffect } from "react";
+import { Message } from "@/types/chat";
+import ChatMessage from "@/components/ChatMessage";
+import ChatInput from "@/components/ChatInput";
+import LoadingAnimation from "@/components/LoadingAnimation";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
-import { downloadChat } from '@/utils/chat';
-import SystemPromptModal from '@/components/SystemPromptModal';
-import { useDarkMode } from '@/hooks/useDarkmode';
+import { downloadChat } from "@/utils/chat";
+import SystemPromptModal from "@/components/SystemPromptModal";
+import { useDarkMode } from "@/hooks/useDarkmode";
+import { sendMessage } from "@/lib/api";
 
 export default function Home() {
-  const [messages, setMessages] = useLocalStorage('chat-messages', []);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useLocalStorage<Message[]>(
+    "chat-messages",
+    []
+  );
+  const [input, setInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [isSystemPromptModalOpen, setSystemPromptModalOpen] = useState(false);
-  const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.");
-  
+  const [systemPrompt, setSystemPrompt] = useState(
+    "You are a helpful assistant."
+  );
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isDarkMode, toggleTheme, resetToSystem, currentTheme } = useDarkMode();
+  const { isDarkMode, toggleTheme, resetToSystem, currentTheme } =
+    useDarkMode();
 
   useEffect(() => {
     setIsClient(true);
@@ -32,8 +40,12 @@ export default function Home() {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  const filteredMessages = messages.filter((message) =>
+    message.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (!isClient) {
     return null;
@@ -44,100 +56,93 @@ export default function Home() {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
-      id: `user-${Date.now()}`,  // 고유한 id 생성
-      role: 'user',
+      id: `user-${Date.now()}`,
+      role: "user",
       content: input.trim(),
     };
 
     try {
       setError(null);
       setIsLoading(true);
-      setMessages(prev => [...prev, userMessage]);
-      setInput('');
+      setMessages([...messages, userMessage]);
+      setInput("");
 
       const allMessages = [
-        { role: 'system', content: systemPrompt, id: 'system' },
+        { role: "system", content: systemPrompt, id: "system" } as Message,
         ...messages,
-        userMessage
+        userMessage,
       ];
 
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: allMessages,
-        }),
-      });
+      const response = await sendMessage(allMessages);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: response.content,
+      };
 
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setMessages(prev => [...prev, {
-        id: `assistant-${Date.now()}`,  // 고유한 id ��성
-        role: 'assistant',
-        content: data.content,
-      }]);
-
-    } catch (error: any) {
-      setError(error.message || '메시지 전송 중 오류가 발생했습니다.');
-      console.error('Error:', error);
+      setMessages([...messages, userMessage, assistantMessage]);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "메시지 전송 중 오류가 발생했습니다.";
+      setError(errorMessage);
+      console.error("Error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-
   const clearChat = () => {
-    if (window.confirm('모든 대화 내용을 삭제하시겠습니까?')) {
+    if (window.confirm("모든 대화 내용을 삭제하시겠습니까?")) {
       setMessages([]);
     }
   };
 
   const handleEditMessage = (id: string, newContent: string) => {
-    setMessages(prev => 
-      prev.map(msg => 
+    setMessages(
+      messages.map((msg) =>
         msg.id === id ? { ...msg, content: newContent } : msg
       )
     );
   };
 
   const handleDeleteMessage = (id: string) => {
-    if (window.confirm('이 메시지를 삭제하시겠습니까?')) {
-      setMessages(prev => prev.filter(msg => msg.id !== id));
+    if (window.confirm("이 메시지를 삭제하시겠습니까?")) {
+      setMessages(messages.filter((msg) => msg.id !== id));
     }
   };
 
   return (
-    <div className={isDarkMode ? 'dark' : ''}>
+    <div className={isDarkMode ? "dark" : ""}>
       <main className="flex min-h-screen flex-col items-center p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
         {/* 헤더 */}
         <div className="w-full max-w-3xl flex justify-between items-center mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
           <h1 className="text-2xl font-bold">AI Chat</h1>
           <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="메시지 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="p-2 border rounded"
+            />
             <div className="relative group">
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
                 title={`현재: ${
-                  currentTheme === 'system' 
-                    ? '시스템 설정' 
-                    : currentTheme === 'dark' 
-                    ? '다크 모드' 
-                    : '라이트 모드'
+                  currentTheme === "system"
+                    ? "시스템 설정"
+                    : currentTheme === "dark"
+                    ? "다크 모드"
+                    : "라이트 모드"
                 }`}
               >
-                {isDarkMode ? '🌙' : '☀️'}
+                {isDarkMode ? "🌙" : "☀️"}
               </button>
-              {currentTheme !== 'system' && (
+              {currentTheme !== "system" && (
                 <button
                   onClick={resetToSystem}
                   className="absolute top-full mt-1 left-0 p-2 bg-white dark:bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
@@ -174,7 +179,7 @@ export default function Home() {
         {/* 메시지 목록 */}
         <div className="w-full max-w-3xl flex-1 overflow-y-auto">
           <div className="space-y-4 pb-24">
-            {messages.map((message, index) => (
+            {filteredMessages.map((message, index) => (
               <ChatMessage
                 key={message.id || `message-${index}-${Date.now()}`}
                 message={message}
@@ -184,14 +189,17 @@ export default function Home() {
             ))}
             {isLoading && <LoadingAnimation key="loading-animation" />}
             {error && (
-              <div key="error-message" className="text-red-500 p-4 text-center bg-red-100 dark:bg-red-900 rounded-lg">
+              <div
+                key="error-message"
+                className="text-red-500 p-4 text-center bg-red-100 dark:bg-red-900 rounded-lg"
+              >
                 {error}
               </div>
             )}
             <div key="messages-end-ref" ref={messagesEndRef} />
           </div>
         </div>
-        
+
         {/* 입력 영역 */}
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 border-t dark:border-gray-700">
           <div className="mx-auto max-w-3xl">
